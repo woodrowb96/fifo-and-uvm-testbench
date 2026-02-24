@@ -24,17 +24,17 @@ package tb_tests;
 
 		env e0;			//test environment
 		gen_item_seq seq;	//test sequence
-		virtual des_if vif;	//interface to DUT
+		virtual tb_fifo_intf vif;	//interface to DUT
 
 		virtual function void build_phase(uvm_phase phase);
 			super.build_phase(phase);
 
 			e0 = env::type_id::create("e0",this);
 		
-			if(!uvm_config_db#(virtual des_if)::get(this, "","des_vif",vif))
+			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","des_vif",vif))
 				`uvm_fatal("TEST", "Could not get vif")
 
-			uvm_config_db#(virtual des_if)::set(this,"e0.a0.*","des_vif",vif);
+			uvm_config_db#(virtual tb_fifo_intf)::set(this,"e0.a0.*","des_vif",vif);
 			
 			seq = gen_item_seq::type_id::create("seq");
 			seq.randomize();				//randomize the number of items generated in sequence
