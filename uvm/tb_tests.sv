@@ -31,10 +31,10 @@ package tb_tests;
 
 			e0 = env::type_id::create("e0",this);
 		
-			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","des_vif",vif))
+			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","tb_fifo_vif",vif))
 				`uvm_fatal("TEST", "Could not get vif")
 
-			uvm_config_db#(virtual tb_fifo_intf)::set(this,"e0.a0.*","des_vif",vif);
+			uvm_config_db#(virtual tb_fifo_intf)::set(this,"e0.a0.*","tb_fifo_vif",vif);
 			
 			seq = gen_item_seq::type_id::create("seq");
 			seq.randomize();				//randomize the number of items generated in sequence

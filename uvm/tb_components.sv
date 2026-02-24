@@ -111,7 +111,7 @@ package tb_components;
 		virtual function void build_phase(uvm_phase phase);
 			super.build_phase(phase);
 
-			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","des_vif",vif))
+			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","tb_fifo_vif",vif))
 				`uvm_fatal("DRV", "Could not get vif")
 		endfunction
 
@@ -157,7 +157,7 @@ package tb_components;
 		virtual function void build_phase(uvm_phase phase);
 			super.build_phase(phase);
 
-			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","des_vif",vif))
+			if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","tb_fifo_vif",vif))
 				`uvm_fatal("MON", "Could not get vif")
 
 			mon_analysis_port = new("mon_analysis_port",this);

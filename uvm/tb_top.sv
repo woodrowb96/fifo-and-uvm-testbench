@@ -38,7 +38,7 @@ module tb_top;
   /*********** UVM TESTING ************/
   //hook the interface up to uvm_test and run
   initial begin
-    uvm_config_db#(virtual tb_fifo_intf)::set(null,"uvm_test_top","des_vif",_if);
+    uvm_config_db#(virtual tb_fifo_intf)::set(null,"uvm_test_top","tb_fifo_vif",_if);
     run_test("test_1");
   end
 endmodule
