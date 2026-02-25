@@ -8,8 +8,7 @@ package tb_config;
 	parameter ADDR_WIDTH = $clog2(LENGTH);
 
 	//want a sequence that has 500 items in it
-	parameter MIN_NUM_TESTS = 500;
-	parameter MAX_NUM_TESTS = 500;
+	parameter NUM_TESTS = 1000;
 
 	//clk period of 50 time steps	
 	parameter CLK_PERIOD = 50;

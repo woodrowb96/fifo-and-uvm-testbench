@@ -18,27 +18,28 @@ module tb_top;
   end
 
   /******** INTERFACE ********/
-  tb_fifo_intf _if(clk);
+  tb_fifo_intf intf(clk);
 
   /******** DUT *************/
   fifo #(LENGTH, WIDTH, ADDR_WIDTH) dut (
     .clk(clk),
-    .reset_n(_if.reset_n),
-    .wr_data(_if.wr_data),
-    .wr(_if.wr),
-    .rd(_if.rd),
-    .rd_data(_if.rd_data),
-    .item_count(_if.item_count),
-    .full(_if.full),
-    .empty(_if.empty),
-    .underflow(_if.underflow),
-    .overflow(_if.overflow)
+    .reset_n(intf.reset_n),
+    .wr_data(intf.wr_data),
+    .wr(intf.wr),
+    .rd(intf.rd),
+    .rd_data(intf.rd_data),
+    .item_count(intf.item_count),
+    .full(intf.full),
+    .empty(intf.empty),
+    .underflow(intf.underflow),
+    .overflow(intf.overflow)
   );
 
   /*********** UVM TESTING ************/
-  //hook the interface up to uvm_test and run
+  //register 
   initial begin
-    uvm_config_db#(virtual tb_fifo_intf)::set(null,"uvm_test_top","tb_fifo_vif",_if);
+    //register vif with config_db so test components can get it
+    uvm_config_db#(virtual tb_fifo_intf)::set(null,"uvm_test_top","tb_fifo_vif",intf);
     run_test("test_1");
   end
 endmodule
