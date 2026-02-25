@@ -1,10 +1,5 @@
 /*
-This contains the uvm tests for the testbech.
-
-This includes
-	base_test:uvm_test that all other tests are derived from
-
-	test_1: a test that runs the constrained random testing testbench
+This contains our uvm tests for the testbech.
 */
 
 package tb_tests;
