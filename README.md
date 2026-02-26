@@ -4,12 +4,7 @@ A SystemVerilog FIFO and UVM coverage-driven testbench with constrained-random s
 
 ## RTL
 
-A FIFO consisting of:
-
-- Circular buffer with read/write pointers that naturally wrap using `$clog2(LENGTH)`-wide addresses
-- Simultaneous read and write to a full FIFO succeeds without overflow
-- Overflow/underflow flags pulse for one cycle on failed writes/reads
-- `item_count`, `full`, and `empty` status outputs
+Parameterized circular-buffer FIFO with configurable depth and width.
 
 ## UVM Testbench
 
@@ -31,9 +26,9 @@ Coverage-driven UVM testbench.
 
 ## How to Run
 
-I wrote two bash scripts to compile and simulate the project using Xilinx Vivado
+I wrote two bash scripts to compile and simulate the project using Xilinx Vivado.
 
-You don't need to run ./xsim_comp on everything before running ./xsim_sim.
+Note: You don't need to run ./xsim_comp on everything before running ./xsim_sim.
 The sim script uses the filelist to compile all the dependencies first.
 
 ```bash
