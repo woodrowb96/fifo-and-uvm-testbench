@@ -1,37 +1,38 @@
 /*
-This file contains systemverilog code for a fifo, built using a circular buffer.
+  A Circular Buffer FIFO
+
+Clock:
+  clk: Both reads and writes are synced to the posedge of the clk
 
 Reset:
   reset_n: active low async reset
-When reset, the fifo will be emptied and fifo status will indicate an empty fifo, i.e.
-  item_count:0
-  empty:1 
-  full:0 
-  underflow:0
-  overflow:0
+
 Control:
-  wr: active high wr enable
-  rd: active high rd enable
+  wr: active high write enable
+  rd: active high read enable
+
 Input:
-  wr_data: if wr is enabled, data is written into fifo
+  wr_data: write data pushed onto the front of the FIFO
+          - clocked in @(posedge clk)
+          - write data is not stored in FIFO until the clk cycle after wr is set
 
 Output:
-  rd_data: if rd is enabled, data is read out 
-  item_count: the number of items currently stored in the fifo, range:0->LENGTH
-  full: 1 if the fifo is full, 0 otherwise
-  empty: 1 if the fifo is empty, 0 otherwise
-  underflow: goes high for 1 clk cycle after an underflow has happened, 0 otherwise
-  overrflow: goes high for 1 clk cycle after an overflow has happened, 0 otherwise
+  rd_data: read data popped off the back of the FIFO
+          - clocked out @(posedge clk)
+          - rd_data will read out the data that is stored in the FIFO
+            DURING the clk cycle rd is asserted, but it is not output onto
+            rd_data until the NEXT clk cycle
 
-All input and output, except reset_n, to/from the fifo is synchronous to the posedge of clk.
+  item_count: the amount of items currently inside the fifo
 
-Underflow occurs when we try and read from an empty fifo.
+Output Flags:
+  full: high if item_count == LENGTH
 
-Simultanous reads and writes to a full fifo will not result in an overflow. 
+  empty: high if item_count == 0
 
-So overflow only occurs when we try and write to a full fifo, and are not reading from it at the same time, i.e.
-  input: wr = 1 rd = 0
-  output: full = 1
+  overflow: high for 1 clk cycle, on the cycle after an overflow
+
+  underflow: high for 1 clk cycle, on the cycle after an underflow
 */
 
 module fifo#(parameter LENGTH = 16, WIDTH = 8)
@@ -39,12 +40,18 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   input logic clk,
   input logic reset_n,
 
-  input logic [WIDTH-1:0] wr_data,
+  //control
   input logic wr,
   input logic rd,
 
+  //input
+  input logic [WIDTH-1:0] wr_data,
+
+  //output
   output logic [WIDTH-1:0] rd_data,
   output logic [$clog2(LENGTH) :0] item_count,
+
+  //output flags
   output logic full,
   output logic empty,
   output logic underflow,
@@ -55,58 +62,105 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   logic [$clog2(LENGTH)-1:0] wr_addr;
   logic [$clog2(LENGTH)-1:0] rd_addr;
 
-  //empty and full 
+  //calc empty and full flags
   assign full = (item_count == LENGTH);
-  assign empty = (item_count == 'd0);	
+  assign empty = (item_count == 'd0);
 
-  //write into fifo
+  /****************** WRITE **************************/
+  //We can only write into the fifo if (wr && (~full || rd))
+  //
+  //NOTE:(~full || rd)  we can write into a full buffer if rd is set.
+  //     We are reading so that clears up a space as we're filling it.
+  /***************************************************/
   always_ff @(posedge clk,negedge reset_n) begin
-    if(!reset_n) begin					//if reseting
-      for(int i=0;i<LENGTH;i++) buffer[i] <= 0; 	//reset buffer to 0
-      wr_addr <= 'd0;					//reset wr_address to 0
-    end 
-    else if(wr && (~full || rd)) begin			//if succesful write
-      wr_addr <= wr_addr + 'd1;			//move to next address
-      buffer[wr_addr]  <= wr_data;			//write to buffer
+    if(!reset_n) begin
+      for(int i=0;i<LENGTH;i++) begin
+        buffer[i] <= '0;
+      end
+      wr_addr <= '0;
+    end
+    else if(wr && (~full || rd)) begin
+      wr_addr <= wr_addr + 'd1;
+      buffer[wr_addr]  <= wr_data;
     end
   end
 
-  //rd from fifo
-  always_ff @(posedge clk,negedge reset_n) begin	
-    if(!reset_n) begin			//if reseting
-      rd_addr	<= 'd0;			//start reading from address 0
+  /************* READ *****************************/
+  //We can only read if (rd && ~empty)
+  /************************************************/
+  always_ff @(posedge clk,negedge reset_n) begin
+    if(!reset_n) begin
+      rd_addr	<= 'd0;
       rd_data <= 'd0;
     end
-    else if(rd && ~empty) begin		//if rd is sucesful
-      rd_addr <= rd_addr + 'd1;	//inc address
-      rd_data <= buffer[rd_addr];	//read from buffer
+    else if(rd && ~empty) begin
+      rd_addr <= rd_addr + 'd1;
+      rd_data <= buffer[rd_addr];
     end
   end
 
-  //determine if overflow happened	
+  /****************** CALC OVERFLOW ********************/
+  //We overflow if: (full && wr && !rd)
+  //  - So if we write to a full buffer
+  //  - AND we are not reading to clear up a space
+  //
+  //If we overflow flag is set for 1 cycle, on the cycle after overflow happened
+  /****************************************************/
   always_ff @(posedge clk,negedge reset_n) begin
-    if(!reset_n) 			overflow <= 'd0;	//no overflow when reseting
-    else if(full && wr && !rd)	overflow <= 'd1;	//overflow if write failed
-    else 				overflow <= 'd0;	//otherwise no overflow
+    if(!reset_n) begin
+      overflow <= 'd0;
+    end
+    else if(full && wr && !rd) begin
+      overflow <= 'd1;
+    end
+    else begin
+      overflow <= 'd0;
+    end
   end
 
-  //determone if underflow happened	
+  /****************** CALC UNDERFLOW ********************/
+  //We underflow if: (empty && rd)
+  //  - So if we read from an empty buffer
+  //
+  //If we underflow flag is set for 1 cycle, on the cycle after underflow happened
+  //
+  //Note: wr does not get us out of an underflow, writes dont get
+  //      written in the next clk cycle so its not available to read yet
+  /****************************************************/
   always_ff @(posedge clk,negedge reset_n) begin
-    if(!reset_n) 		underflow <= 'd0;		//no underflow when reseting
-    else if(empty && rd)	underflow <= 'd1;		//underflow if read failed
-    else 			underflow <= 'd0;		//otherwise no underflow
+    if(!reset_n) begin
+      underflow <= 'd0;
+    end
+    else if(empty && rd) begin
+      underflow <= 'd1;
+    end
+    else begin
+      underflow <= 'd0;
+    end
   end
 
-  //calculate item_count
+  /***************** CALC ITEMCOUNT *********************/
+  //We look at {wr,rd,!full,!empty} signals to determine what calc is
+  //needed to get an accurate item count
+  /******************************************************/
   always_ff @(posedge clk, negedge reset_n)
-    if(!reset_n) item_count <= 'd0;					//reset item_count to 0
+    if(!reset_n) begin
+      item_count <= 'd0;
+    end
     else begin
       casez({wr,rd,!full,!empty})
-        4'b01?1: item_count <= item_count - 'd1;	//if we only rd from non empty, dec count
-        4'b101?: item_count <= item_count + 'd1;	//if we only wrote to non full fifo, inc count
-        4'b1110: item_count <= item_count + 'd1;	//rd durring wr to empty fifo
-                      //results in succesful wr and failed rd
-        default: item_count <= item_count;		//all other scenarios dont change item_count
-      endcase	
+        4'b01?1: begin                        //if we are only reading and buffer is not empty
+          item_count <= item_count - 'd1;     //decrement the item count
+        end
+        4'b101?: begin                        //if we are only writing and the buffer is not full
+          item_count <= item_count + 'd1;     //increment the item count
+        end
+        4'b1110: begin                        //if we write during an underflow, the rd fails but the wr succeeds
+          item_count <= item_count + 'd1;     //increment the item count
+        end
+        default: begin                        //all other scenarios
+          item_count <= item_count;           //item count is stable
+        end
+      endcase
     end
 endmodule
