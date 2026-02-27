@@ -34,31 +34,28 @@ So overflow only occurs when we try and write to a full fifo, and are not readin
   output: full = 1
 */
 
-module fifo#(parameter LENGTH = 16, WIDTH = 8,ADDR_WIDTH = $clog2(LENGTH))
+module fifo#(parameter LENGTH = 16, WIDTH = 8)
 (
   input logic clk,
-  input logic reset_n,			//active low async reset
+  input logic reset_n,
 
-  input logic [WIDTH-1:0] wr_data,	//data in
-  input logic wr,				//wr enable
-  input logic rd,				//rd enable
+  input logic [WIDTH-1:0] wr_data,
+  input logic wr,
+  input logic rd,
 
-  output logic [WIDTH-1:0] rd_data,	//data out
-  output logic [ADDR_WIDTH:0] item_count,	//total items currently in fifo
-  output logic full,			
+  output logic [WIDTH-1:0] rd_data,
+  output logic [$clog2(LENGTH) :0] item_count,
+  output logic full,
   output logic empty,
   output logic underflow,
   output logic overflow
 );
+  logic [WIDTH-1:0] buffer [LENGTH-1:0];
 
-  logic [WIDTH-1:0] buffer [LENGTH-1:0];	//circular buffer to hold data
+  logic [$clog2(LENGTH)-1:0] wr_addr;
+  logic [$clog2(LENGTH)-1:0] rd_addr;
 
-  //addresses are log2(length) wide, 
-  //so that they will wrap around to
-  //0 when they reach LENGTH 
-  logic [ADDR_WIDTH-1:0] wr_addr,rd_addr;	//rd and wr address used to move around buffer
-
-  //empty and full 	
+  //empty and full 
   assign full = (item_count == LENGTH);
   assign empty = (item_count == 'd0);	
 

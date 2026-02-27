@@ -8,7 +8,7 @@ interface tb_fifo_intf(input clk);
   logic rd;
 
   logic [WIDTH-1:0] rd_data;
-  logic [ADDR_WIDTH:0] item_count;
+  logic [$clog2(LENGTH):0] item_count;
   logic full;
   logic empty;
   logic underflow;

@@ -13,7 +13,7 @@ package tb_item_pkg;
 
     //output
     logic [WIDTH-1:0] rd_data;
-    logic [ADDR_WIDTH:0] item_count;
+    logic [$clog2(LENGTH):0] item_count;
     logic empty;
     logic full;
     logic underflow;

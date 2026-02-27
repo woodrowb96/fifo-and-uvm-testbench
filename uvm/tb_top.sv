@@ -21,7 +21,7 @@ module tb_top;
   tb_fifo_intf intf(clk);
 
   /******** DUT *************/
-  fifo #(LENGTH, WIDTH, ADDR_WIDTH) dut (
+  fifo #(LENGTH, WIDTH) dut (
     .clk(clk),
     .reset_n(intf.reset_n),
     .wr_data(intf.wr_data),

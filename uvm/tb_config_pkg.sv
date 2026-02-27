@@ -8,7 +8,6 @@ package tb_config_pkg;
   //dut config
   parameter WIDTH = 8;
   parameter LENGTH = 16;
-  parameter ADDR_WIDTH = $clog2(LENGTH);
 
   //test config
   parameter NUM_TESTS = 1000;
