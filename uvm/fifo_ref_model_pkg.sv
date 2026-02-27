@@ -1,70 +1,69 @@
-/*
-This file contains a reference fifo, that is used to verify the correctnes of the DUT fifo
-*/
 package fifo_ref_model_pkg;
-	class fifo_ref_model #(parameter LENGTH);
-	//This class is used to model an rtl fifo, 
-	//that can be used as a reference to 
-	//compare the DUT fifo against in the test bench
+  class fifo_ref_model #(parameter LENGTH, WIDTH);
 
-		int queue [$:LENGTH-1];	//a bounded queue to hold data stored in FIFO
-		
-		int item_count;		//returns number of valid items currently in queue
-		int full;		//returns 1 if full 0 if not full
-		int empty;		//returns 1 if empty 0 if not empty
-		int underflow;		//returns 1 if input results in an underflow condition, 0 otherwise
-		int overflow;		//returns 1 if input results in an overflow condition, 0 otherwise
-		
-		int rd_data;		//data currently being read out of fifo
-	
-		function new();
-		//create a new fifo and initialize data
-		//this function corresponds to reseting the rtl fifo
-			full = 0;
-			empty = 1;
-			underflow = 0;
-			overflow = 0;
-			item_count = 0;
-			rd_data = 0;
-		endfunction 	
+    //use a bounded queue as our reference fifo
+    logic [WIDTH-1:0] queue [$:LENGTH-1];
 
-		function void write(int wr,int rd,int wr_data);
-		//this function models a wr to the fifo
-		
-		//if wr is sucessfull wr_data should be stored in the fifo	
-		//if wr was unsucesfull it sets overflow 
-		
-			if(wr && (full && !rd)) overflow = 1;	//overflow if we are writing to a full fifo, and not reading at same time
-			else 			overflow = 0; 	
+    logic [$clog2(LENGTH):0] item_count;
+    logic full;
+    logic empty;
+    logic underflow;
+    logic overflow;
 
-			if(wr && (!full || rd))			//write into queue if we are not causing an overflow
-				queue.push_back(wr_data);
-		endfunction
+    logic [WIDTH-1:0] rd_data;
 
-		function void read(int rd);
-		//this function models a rd from the fifo
+    //initialize the model
+    //this is the equivalent of resetting the fifo
+    function new();
+      full = 0;
+      empty = 1;
+      underflow = 0;
+      overflow = 0;
+      item_count = 0;
+      rd_data = 0;
+    endfunction
 
-		//if rd is sucesfull data is read out and stored on rd_data	
-		//it also sets underflow if an underflow has occured
-		
-			if(rd && empty) underflow = 1;	//underflow if we read from empty fifo
-			else 		underflow = 0;
-		
-			if(rd && !empty) 		//if there is no underflow update rd data
-				rd_data = queue.pop_front();	
-		endfunction	
-	
-		function void update(int wr,int rd,int wr_data);
-		//the testbench can use this function to send input to fifo 
+    //write and set the appropriate overflow flag
+    function void write(logic wr,logic rd,logic [WIDTH-1:0] wr_data);
+      if(wr && (full && !rd)) begin
+        overflow = 1;
+      end
+      else begin
+        overflow = 0;
+      end
 
-		//fifo  state will be updated according to the input
-			read(rd); 		//read
-			write(wr,rd,wr_data);	//write
+      if(wr && (!full || rd)) begin
+        queue.push_back(wr_data);
+      end
+    endfunction
 
-			full = queue.size() == LENGTH;	//update full
-			empty = queue.size() == 0;	//update empty
-			item_count = queue.size();	//update item_count
-		endfunction
 
-	endclass
+    //read and set the appropriate underflow flag
+    function void read(logic rd);
+      if(rd && empty) begin
+        underflow = 1;
+      end
+      else begin
+        underflow = 0;
+      end
+
+      if(rd && !empty) begin
+        rd_data = queue.pop_front();
+      end
+    endfunction
+
+    //update the fifo state
+    function void update(logic wr, logic rd, logic [WIDTH-1:0] wr_data);
+      //read, write, set overflow and underflow flags
+      read(rd);
+      write(wr,rd,wr_data);
+
+      //calc full and empty flags
+      full = queue.size() == LENGTH;
+      empty = queue.size() == 0;
+
+      //calc item count
+      item_count = queue.size();
+    endfunction
+  endclass
 endpackage

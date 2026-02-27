@@ -174,7 +174,7 @@ package tb_components_pkg;
     endfunction
 
     //our reference model to score each item
-    fifo_ref_model #(LENGTH) exp_fifo;
+    fifo_ref_model #(LENGTH, WIDTH) exp_fifo;
 
     //analysis implementation so we can recieve items from monitor and write() our tests
     uvm_analysis_imp #(Item,scoreboard) m_analysis_imp;
