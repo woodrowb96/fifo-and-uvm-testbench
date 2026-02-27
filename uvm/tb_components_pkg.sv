@@ -138,16 +138,18 @@ package tb_components_pkg;
     endtask
   endclass
 
+  /****************** SUBSCRIBER *******************************************/
+
   class funct_cov_subscriber extends uvm_subscriber #(Item);
-  //this class is a subscriber to the monitors analysis_port
-  //it is used to collect coverage, using items that appear on the port
 
     `uvm_component_utils(funct_cov_subscriber)
 
     typedef uvm_subscriber #(Item) this_type;
 
-    uvm_analysis_imp #(Item, this_type) analysis_export;	//will get connected to monitor analysis port
+    //analysis implementation, so we can recieve items and write to coverage
+    uvm_analysis_imp #(Item, this_type) analysis_export;
 
+    //our coverage
     coverage funct_cov;
 
     function new(string name, uvm_component parent);
@@ -156,94 +158,82 @@ package tb_components_pkg;
       funct_cov = new();
     endfunction
 
+    //sample our coverage
     function void write(Item t);
-    //when write is called sample coverage, using item on
-    //analysis_port
       funct_cov.sample(t);
     endfunction
   endclass
 
+  /***************** SCOREBOARD ************************************/
+
   class scoreboard extends uvm_scoreboard;
-  //this is the testbenches scoreboard
-  //it compares items recieved from monitor
-  //to a reference DUT to determine correctness of DUT
     `uvm_component_utils(scoreboard)
 
     function new(string name = "scoreboard",uvm_component parent=null);
       super.new(name,parent);
     endfunction
 
-    //////vals/////
+    //our reference model to score each item
+    fifo_ref_model #(LENGTH) exp_fifo;
 
-    fifo_ref_model #(LENGTH) exp_fifo;	//reference fifo
-
+    //analysis implementation so we can recieve items from monitor and write() our tests
     uvm_analysis_imp #(Item,scoreboard) m_analysis_imp;
 
     virtual function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-
       m_analysis_imp = new("m_analysis_imp",this);
-
       exp_fifo = new();
     endfunction
 
+    //score our item using the ref model
     virtual function void write(Item item);
-    //this function compares the item sent from monitor to
-    //the reference fifo
-    //It also uses the item to update the reference fifo
+      `uvm_info("SCB",$sformatf("%s",item.convert2str()),UVM_HIGH);
 
-      `uvm_info("SCB",$sformatf("%s",item.convert2str()),UVM_LOW);	//display item values
-
-      //check that item output matches, reference fifo output
-      //If it does not match, output an error and
-      //terminate the sim, using uvm_fatal
-      if(item.underflow != exp_fifo.underflow)
+      //score each signal in item against the expected val from the ref_model
+      if(item.underflow != exp_fifo.underflow) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_underflow=%0d, underflow=%0d",exp_fifo.underflow,item.underflow));
-
-      if(item.overflow != exp_fifo.overflow)
+      end
+      if(item.overflow != exp_fifo.overflow) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_overflow=%0d, overflow=%0d",exp_fifo.overflow,item.overflow));
-
-      if(item.rd_data != exp_fifo.rd_data)
+      end
+      if(item.rd_data != exp_fifo.rd_data) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_rd_data=%0d, rd_data=%0d",exp_fifo.rd_data,item.rd_data));
-
-      if(item.underflow != exp_fifo.underflow)
-        `uvm_fatal("SCB",$sformatf("Error! exp_underflow=%0d, underflow=%0d",exp_fifo.underflow,item.underflow));
-      if(item.overflow != exp_fifo.overflow)
-        `uvm_fatal("SCB",$sformatf("Error! exp_overflow=%0d, overflow=%0d",exp_fifo.overflow,item.overflow));
-
-      if(item.item_count != exp_fifo.item_count)
+      end
+      if(item.item_count != exp_fifo.item_count) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_item_count=%0d, item_count=%0d",exp_fifo.item_count,item.item_count));
-
-      if(item.full != exp_fifo.full)
+      end
+      if(item.full != exp_fifo.full) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_full=%0d, full=%0d",exp_fifo.full,item.full));
-
-      if(item.empty != exp_fifo.empty)
+      end
+      if(item.empty != exp_fifo.empty) begin
         `uvm_fatal("SCB",$sformatf("Error! exp_empty=%0d, empty=%0d",exp_fifo.empty,item.empty));
+      end
 
-      //if item output matched fifo_ref_model output, then the
-      //design passed
       `uvm_info("SCB",$sformatf("PASS!"),UVM_LOW);
 
-      exp_fifo.update(item.wr,item.rd,item.wr_data);	//update the reference fifo
 
+      //update the ref fifo
+      exp_fifo.update(item.wr,item.rd,item.wr_data);
     endfunction
   endclass
 
+  /******************* AGENT *************************************/
+
   class agent extends uvm_agent;
-  //this class is the testbenches agent
     `uvm_component_utils(agent)
 
     function new(string name = "agent",uvm_component parent=null);
       super.new(name,parent);
     endfunction
 
-    driver	d0;
-    monitor	m0;
-    uvm_sequencer #(Item) s0;
+    driver d0;
+    monitor m0;
+    uvm_sequencer #(Item) s0;  //a sequencer to coordinate sending the sequence to driver
 
     virtual function void build_phase(uvm_phase phase);
       super.build_phase(phase);
 
+      //get each component from the UVM factory
       s0 = uvm_sequencer#(Item)::type_id::create("s0",this);
       d0 = driver::type_id::create("d0",this);
       m0 = monitor::type_id::create("m0",this);
@@ -251,19 +241,22 @@ package tb_components_pkg;
 
     virtual function void connect_phase(uvm_phase phase);
       super.connect_phase(phase);
-      d0.seq_item_port.connect(s0.seq_item_export);	//connect driver to sequencer
+
+      //hook the sequencer to driver
+      d0.seq_item_port.connect(s0.seq_item_export);
     endfunction
   endclass
 
+  /*********************   ENV ********************************************/
+
   class env extends uvm_env;
-  //this class holds the testbenches environment
     `uvm_component_utils(env)
 
     function new(string name = "env",uvm_component parent=null);
       super.new(name,parent);
     endfunction
 
-    agent	a0;
+    agent a0;
     scoreboard sb0;
     funct_cov_subscriber fc0;
 
@@ -276,9 +269,8 @@ package tb_components_pkg;
 
     virtual function void connect_phase(uvm_phase phase);
       super.connect_phase(phase);
-      a0.m0.mon_analysis_port.connect(sb0.m_analysis_imp);	//connect monitor and scoreboard
-      a0.m0.mon_analysis_port.connect(fc0.analysis_export);	//connect monitor and functional cov subscriber
+      a0.m0.mon_analysis_port.connect(sb0.m_analysis_imp);
+      a0.m0.mon_analysis_port.connect(fc0.analysis_export);
     endfunction
   endclass
-
 endpackage
