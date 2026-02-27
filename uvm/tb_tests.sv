@@ -3,7 +3,7 @@ This contains our uvm tests for the testbech.
 */
 
 package tb_tests;
-  import tb_components::*;
+  import tb_components_pkg::*;
   import tb_config::*;
   import uvm_pkg::*;
   `include "uvm_macros.svh"
