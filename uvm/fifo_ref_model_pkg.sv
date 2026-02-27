@@ -1,8 +1,8 @@
 /*
 This file contains a reference fifo, that is used to verify the correctnes of the DUT fifo
 */
-package ref_fifo;
-	class ref_fifo #(parameter LENGTH);
+package fifo_ref_model_pkg;
+	class fifo_ref_model #(parameter LENGTH);
 	//This class is used to model an rtl fifo, 
 	//that can be used as a reference to 
 	//compare the DUT fifo against in the test bench

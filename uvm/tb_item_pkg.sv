@@ -1,5 +1,5 @@
 package tb_item_pkg;
-  import tb_config::*;
+  import tb_config_pkg::*;
   import uvm_pkg::*;
   `include "uvm_macros.svh"
 

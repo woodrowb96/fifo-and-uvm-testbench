@@ -1,6 +1,6 @@
 package tb_coverage_pkg;
 
-  import tb_config::*;
+  import tb_config_pkg::*;
   import uvm_pkg::*;
   import tb_item_pkg::*;
   `include "uvm_macros.svh"

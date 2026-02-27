@@ -2,9 +2,9 @@
 This file contains components used to construct a constrained random test bench using uvm.
 */
 package tb_components_pkg;
-  import tb_config::*;
+  import tb_config_pkg::*;
   import uvm_pkg::*;
-  import ref_fifo::*;
+  import fifo_ref_model_pkg::*;
   import tb_item_pkg::*;
   import tb_coverage_pkg::*;
   `include "uvm_macros.svh"
@@ -175,7 +175,7 @@ package tb_components_pkg;
 
     //////vals/////
 
-    ref_fifo #(LENGTH) exp_fifo;	//reference fifo
+    fifo_ref_model #(LENGTH) exp_fifo;	//reference fifo
 
     uvm_analysis_imp #(Item,scoreboard) m_analysis_imp;
 
@@ -220,7 +220,7 @@ package tb_components_pkg;
       if(item.empty != exp_fifo.empty)
         `uvm_fatal("SCB",$sformatf("Error! exp_empty=%0d, empty=%0d",exp_fifo.empty,item.empty));
 
-      //if item output matched ref_fifo output, then the
+      //if item output matched fifo_ref_model output, then the
       //design passed
       `uvm_info("SCB",$sformatf("PASS!"),UVM_LOW);
 

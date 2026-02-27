@@ -1,7 +1,7 @@
 /*
 This file holds our uvm tb configuration
 */
-package tb_config;
+package tb_config_pkg;
   //clk config
   parameter CLK_PERIOD = 50;
 

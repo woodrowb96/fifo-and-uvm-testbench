@@ -1,4 +1,4 @@
-import tb_config::*;
+import tb_config_pkg::*;
 
 interface tb_fifo_intf(input clk);
   logic reset_n;

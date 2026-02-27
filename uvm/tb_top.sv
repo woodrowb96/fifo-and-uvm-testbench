@@ -2,8 +2,8 @@
 The top level module for our uvm testbench
 */
 
-import tb_tests::*;
-import tb_config::*;
+import tb_tests_pkg::*;
+import tb_config_pkg::*;
 import uvm_pkg::*;
 
 `include "uvm_macros.svh"
