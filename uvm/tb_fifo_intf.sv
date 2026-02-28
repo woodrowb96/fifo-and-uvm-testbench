@@ -14,9 +14,14 @@ interface tb_fifo_intf(input clk);
   logic underflow;
   logic overflow;
 
-  clocking cb @(posedge clk);
-    default input #0 output #1;
+  clocking cb_drive @(posedge clk);
+    default output #1;
     output wr_data, wr, rd;
-    input rd_data, item_count, full, empty, underflow, overflow;
+  endclocking
+
+  //cb_mon will monitor all the signals before cb_drive drieves the next item into the DUT
+  clocking cb_mon @(posedge clk);
+    default input #1step;
+    input rd, wr, wr_data, rd_data, item_count, full, empty, underflow, overflow;
   endclocking
 endinterface

@@ -60,7 +60,6 @@ package tb_components_pkg;
     virtual function void build_phase(uvm_phase phase);
       super.build_phase(phase);
 
-      //connect the virtual interface
       if(!uvm_config_db#(virtual tb_fifo_intf)::get(this, "","tb_fifo_vif",vif))
         `uvm_fatal("DRV", "Could not get vif")
     endfunction
@@ -79,10 +78,10 @@ package tb_components_pkg;
     endtask
 
     virtual task drive_item(Item m_item);
-      @(vif.cb);
-      vif.cb.wr <= m_item.wr;
-      vif.cb.wr_data <= m_item.wr_data;
-      vif.cb.rd <= m_item.rd;
+      @(vif.cb_drive);
+      vif.cb_drive.wr <= m_item.wr;
+      vif.cb_drive.wr_data <= m_item.wr_data;
+      vif.cb_drive.rd <= m_item.rd;
     endtask
   endclass
 
@@ -116,19 +115,21 @@ package tb_components_pkg;
 
       //loop, read the signals into an item, brodcast the item to the scoreboard
       forever begin
-        @(vif.cb);
+        @(vif.cb_mon);
         //make sure we are not reseting
         if(vif.reset_n) begin
           Item item = Item::type_id::create("item");
-          item.wr = vif.wr;
-          item.wr_data = vif.wr_data;
-          item.rd = vif.rd;
-          item.rd_data = vif.cb.rd_data;
-          item.item_count = vif.cb.item_count;
-          item.full = vif.cb.full;
-          item.empty = vif.cb.empty;
-          item.underflow = vif.cb.underflow;
-          item.overflow = vif.cb.overflow;
+          //sample DUT inputs
+          item.wr = vif.cb_mon.wr;
+          item.wr_data = vif.cb_mon.wr_data;
+          item.rd = vif.cb_mon.rd;
+          //sample DUT outputs
+          item.rd_data = vif.cb_mon.rd_data;
+          item.item_count = vif.cb_mon.item_count;
+          item.full = vif.cb_mon.full;
+          item.empty = vif.cb_mon.empty;
+          item.underflow = vif.cb_mon.underflow;
+          item.overflow = vif.cb_mon.overflow;
 
           //send item to scoreboard
           mon_analysis_port.write(item);

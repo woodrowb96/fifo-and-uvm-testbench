@@ -17,7 +17,7 @@ Coverage-driven UVM testbench.
 
 ### Testbench
 
-- Constrained-randomization inside a UVM Sequence, written to exercise full coverage
+ Constrained-randomization inside a UVM Sequence, written to exercise full coverage
     - `uvm_driver`
     - `uvm_monitor`
     - `uvm_subscriber` to collect coverage
