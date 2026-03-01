@@ -35,7 +35,7 @@ Output Flags:
   underflow: high for 1 clk cycle, on the cycle after an underflow
 */
 
-module fifo#(parameter LENGTH = 16, WIDTH = 8)
+module fifo#(parameter int LENGTH = 16, parameter int WIDTH = 8)
 (
   input logic clk,
   input logic reset_n,
@@ -49,7 +49,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
 
   //output
   output logic [WIDTH-1:0] rd_data,
-  output logic [$clog2(LENGTH) :0] item_count,
+  output logic [$clog2(LENGTH):0] item_count,
 
   //output flags
   output logic full,
@@ -57,12 +57,13 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   output logic underflow,
   output logic overflow
 );
+  //circular buffer and its rd/wr_addr's
   logic [WIDTH-1:0] buffer [LENGTH-1:0];
-
   logic [$clog2(LENGTH)-1:0] wr_addr;
   logic [$clog2(LENGTH)-1:0] rd_addr;
 
-  //calc empty and full flags
+  /****************** CALC EMPTY/FULL FLAGS **************************/
+
   assign full = (item_count == LENGTH);
   assign empty = (item_count == 'd0);
 
@@ -72,6 +73,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   //NOTE:(~full || rd)  we can write into a full buffer if rd is set.
   //     We are reading so that clears up a space as we're filling it.
   /***************************************************/
+
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
       for(int i=0;i<LENGTH;i++) begin
@@ -80,7 +82,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
       wr_addr <= '0;
     end
     else if(wr && (~full || rd)) begin
-      wr_addr <= wr_addr + 'd1;
+      wr_addr <= (wr_addr == LENGTH - 1) ? '0: wr_addr + 'd1;
       buffer[wr_addr]  <= wr_data;
     end
   end
@@ -88,13 +90,14 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   /************* READ *****************************/
   //We can only read if (rd && ~empty)
   /************************************************/
+
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
       rd_addr	<= 'd0;
       rd_data <= 'd0;
     end
     else if(rd && ~empty) begin
-      rd_addr <= rd_addr + 'd1;
+      rd_addr <= (rd_addr == LENGTH - 1) ? '0: rd_addr + 'd1;
       rd_data <= buffer[rd_addr];
     end
   end
@@ -106,6 +109,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   //
   //If we overflow flag is set for 1 cycle, on the cycle after overflow happened
   /****************************************************/
+
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
       overflow <= 'd0;
@@ -127,6 +131,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   //Note: wr does not get us out of an underflow, writes dont get
   //      written in the next clk cycle so its not available to read yet
   /****************************************************/
+
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
       underflow <= 'd0;
@@ -143,6 +148,7 @@ module fifo#(parameter LENGTH = 16, WIDTH = 8)
   //We look at {wr,rd,!full,!empty} signals to determine what calc is
   //needed to get an accurate item count
   /******************************************************/
+
   always_ff @(posedge clk, negedge reset_n)
     if(!reset_n) begin
       item_count <= 'd0;
