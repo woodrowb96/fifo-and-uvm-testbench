@@ -5,7 +5,11 @@ Clock:
   clk: Both reads and writes are synced to the posedge of the clk
 
 Reset:
-  reset_n: active low async reset
+  reset_n: active low async restet
+            - resets the fifo to an empty state
+            - item_count: reset to 0
+            - Note: rd_data does not get reset to 0.
+                    We dont care what unwritten data outputs.
 
 Control:
   wr: active high write enable
@@ -76,9 +80,6 @@ module fifo#(parameter int LENGTH = 16, parameter int WIDTH = 8)
 
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
-      for(int i=0;i<LENGTH;i++) begin
-        buffer[i] <= '0;
-      end
       wr_addr <= '0;
     end
     else if(wr && (~full || rd)) begin
@@ -93,8 +94,7 @@ module fifo#(parameter int LENGTH = 16, parameter int WIDTH = 8)
 
   always_ff @(posedge clk,negedge reset_n) begin
     if(!reset_n) begin
-      rd_addr	<= 'd0;
-      rd_data <= 'd0;
+      rd_addr <= 'd0;
     end
     else if(rd && ~empty) begin
       rd_addr <= (rd_addr == LENGTH - 1) ? '0: rd_addr + 'd1;
@@ -144,7 +144,7 @@ module fifo#(parameter int LENGTH = 16, parameter int WIDTH = 8)
     end
   end
 
-  /***************** CALC ITEMCOUNT *********************/
+  /***************** CALC ITEM_COUNT *********************/
   //We look at {wr,rd,!full,!empty} signals to determine what calc is
   //needed to get an accurate item count
   /******************************************************/
