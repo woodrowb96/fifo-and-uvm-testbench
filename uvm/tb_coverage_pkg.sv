@@ -9,7 +9,7 @@ package tb_coverage_pkg;
     Item m_item;
 
     covergroup cg;
-
+      //we want to cover writting and reading into the fifo
       wr: coverpoint m_item.wr {
         bins en = {1};
         bins dis = {0};
@@ -19,38 +19,104 @@ package tb_coverage_pkg;
         bins dis = {0};
       }
 
+      //We want to cover the following interesting rd wr crosses
+      wr_x_rd: cross wr, rd {
+        bins rd_during_wr = binsof(rd.en) && binsof(wr.en);
+        bins rd_only      = binsof(rd.en) && binsof(wr.dis);
+        bins wr_only      = binsof(rd.dis) && binsof(wr.en);
+        bins neither      = binsof(rd.dis) && binsof(wr.dis);
+      }
+
+      //We want to write and read all_ones, all_zeros.
+      wr_data: coverpoint m_item.wr_data iff(m_item.wr) {
+        bins all_ones = {'1};
+        bins all_zero = {'0};
+        bins others = default;
+      }
+      rd_data: coverpoint m_item.rd_data iff(m_item.rd) {
+        bins all_ones = {'1};
+        bins all_zero = {'0};
+        bins others = default;
+      }
+
+      //We want to:
+      //  - cover having a full and an empty fifo.
+      //
+      //We want to:
+      //  - assert the flag, then reassert it at some later point
       full: coverpoint m_item.full {
         bins t = {1};
         bins f = {0};
+
+        //transitions
+        bins reassert = (1 => 0[*1:$] => 1);  //1 then 0, then at any later point 1 again
       }
       empty: coverpoint m_item.empty {
         bins t = {1};
         bins f = {0};
+
+        //transitions
+        bins reassert = (1 => 0[*1:$] => 1);  //1 then 0, then at any later point 1 again
       }
 
-      //cross to get corner cases
-      cross_cvg: cross rd,empty,wr,full {
-
-        //we want to read and write at the same time
-        bins rd_during_wr = binsof(wr.en) && binsof(rd.en);
-
-        //we want to wr to a full and empty fifo
-        bins wr_to_full = binsof(wr.en) && binsof(full.t);
-        bins wr_to_empty = binsof(wr.en) && binsof(empty.t);
-
-        //we want to read from a full and empty fifo
-        bins rd_from_empty = binsof(rd.en) && binsof(empty.t);
-        bins rd_from_full = binsof(rd.en) && binsof(full.t);
-
-        //we want to read during a write to a full fifo
-        bins rd_during_wr_to_full = binsof(wr.en) && binsof(rd.en) && binsof(full.t);
-
-        //we want to read during write to an empty fifo
-        bins rd_during_wr_from_empty = binsof(wr.en) && binsof(rd.en) && binsof(empty.t);
-
-        //we cant have a fifo that is full and empty at the same time
-        illegal_bins empty_and_full = binsof(full.t) && binsof(empty.t);
+      //we want to write and read from full and empty fifos
+      wr_to_full: coverpoint (m_item.wr && m_item.full) {
+        bins hit = {1};
       }
+      rd_from_empty: coverpoint (m_item.rd && m_item.empty) {
+        bins hit = {1};
+      }
+      wr_to_empty: coverpoint (m_item.wr && m_item.empty) {
+        bins hit = {1};
+      }
+      rd_from_full: coverpoint (m_item.rd && m_item.full) {
+        bins hit = {1};
+      }
+
+      //we want to:
+      //  - rd during a write to full (wont cause an overflow)
+      //  - !rd during a write to full (will cause an overflow)
+      rd_x_wr_to_full: cross rd, wr_to_full {
+        bins rd_en = binsof(wr_to_full.hit) && binsof(rd.en);
+        bins rd_dis = binsof(wr_to_full.hit) && binsof(rd.dis);
+      }
+
+      //we want to:
+      //  - wr during a read from empty (write suceeds, item_count++, causes an underflow)
+      //  - !wr during a read from empty (item_count stable, causes an underflow)
+      wr_x_rd_from_empty: cross wr, rd_from_empty {
+        bins wr_en = binsof(rd_from_empty.hit) && binsof(wr.en);
+        bins wr_dis = binsof(rd_from_empty.hit) && binsof(wr.dis);
+      }
+
+      //We want to:
+      //  - overflow and underflow the fifo
+      //
+      //We want to:
+      //  - assert overflow, then deassert, then reassert each flag
+      //  - hit back to back over/underflows for each flag
+      //
+      //Note: The Over/underflow flags are only asserted for 1 clk cycle.
+      //      So both transition bins check transitions on back-to-back clk cycles,
+      //      since that is the interesting corner behavior for the 
+      //      over/underflow flags. (vs doing 1=>0[*1:$]=>1 like in the full flag)
+      overflow: coverpoint m_item.overflow {
+        bins t = {1};
+        bins f = {0};
+
+        //transitions
+        bins reassert = (1 => 0 => 1);
+        bins back_to_back = (1[*2]);
+      }
+      underflow: coverpoint m_item.underflow {
+        bins t = {1};
+        bins f = {0};
+
+        //transitions
+        bins reassert = (1 => 0 => 1);
+        bins back_to_back = (1[*2]);
+      }
+
     endgroup
 
     function new();
