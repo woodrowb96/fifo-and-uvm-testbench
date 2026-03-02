@@ -24,6 +24,18 @@ Coverage-driven UVM testbench.
     - `uvm_scoreboard` that uses the reference model to score each item
     - `uvm_agent` `uvm_env` and `uvm_test` to structure everything
 
+### Assertions
+
+SVA assertion module bound to the FIFO, checking the following properties:
+
+- **Reset behavior** - all registered signals reset to correct values
+- **Full/empty flags** - set and cleared based on item_count
+- **Pointer bounds** - wr_addr and rd_addr pointers stay within valid range
+- **Pointer increment/wrap** - addresses both increment and wrap to 0 when they get to the end of the buffer
+- **Write/read data** - data written to and read from the buffer correctly
+- **Overflow/underflow flags** - set and cleared under the correct conditions
+- **Item count** - increments, decrements, and stays stable correctly
+
 ## How to Run
 
 I wrote two bash scripts to compile and simulate the project using Xilinx Vivado.
