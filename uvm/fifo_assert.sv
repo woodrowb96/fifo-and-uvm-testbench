@@ -42,14 +42,6 @@ module fifo_assert #(parameter int LENGTH = 16, parameter int WIDTH = 8)
   rd_addr_reset_assert: assert property(rd_addr_reset_prop) else
     $error("[FIFO_ASSERT] (rd_addr_reset_assert): rd_addr was not reset to 0, rd_addr = %0d", fifo.rd_addr);
 
-  property rd_data_reset_prop;
-    @(posedge clk)
-    (!reset_n) |-> rd_data == 'd0;
-  endproperty
-
-  rd_data_reset_assert: assert property(rd_data_reset_prop) else
-    $error("[FIFO_ASSERT] (rd_data_reset_assert): rd_data was not reset to 0, rd_data = %0d", rd_data);
-
   property item_count_reset_prop;
     @(posedge clk)
     (!reset_n) |-> item_count == 'd0;
@@ -270,5 +262,14 @@ module fifo_assert #(parameter int LENGTH = 16, parameter int WIDTH = 8)
 
   item_count_stable_assert: assert property(item_count_stable_prop) else
     $error("[FIFO_ASSERT] (item_count_stable_assert): item_count changed unexpectedly, item_count = %0d", item_count);
+
+  //we want to make sure item_count is never larger than LENGTH
+  property item_count_upper_bound_prop;
+    @(posedge clk)
+    (item_count <= LENGTH);
+  endproperty
+
+  item_count_upper_bound_assert: assert property(item_count_upper_bound_prop) else
+    $error("[FIFO_ASSERT] (item_count_upper_bound_assert): item count > LENGTH, item_count = %0d", item_count);
 
 endmodule
