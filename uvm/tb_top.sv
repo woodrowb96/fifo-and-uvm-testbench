@@ -35,6 +35,9 @@ module tb_top;
     .overflow(intf.overflow)
   );
 
+  /************ BIND ASSERTIONS *********/
+  bind dut fifo_assert #(LENGTH,WIDTH) dut_assert(.*);
+
   /*********** UVM TESTING ************/
   //register 
   initial begin
