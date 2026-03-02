@@ -39,6 +39,38 @@ package tb_coverage_pkg;
         bins others = default;
       }
 
+      //We want to the following item_count corners
+      item_count: coverpoint m_item.item_count {
+        bins empty = {'0};
+        bins almost_full = {LENGTH - 1};
+        bins full = {LENGTH};
+
+        //we want to go from full-to-empty, and empty-to-full at some point in testing
+        //  -Note: This isnt a linear sweep, when we are in the [*1:$] section
+        //         we can go up and down. We just want to cover going from
+        //         full-to-empty and empty-to-full, without much care how we
+        //         get there, just that we started at 0 and went up to LENGTH,
+        //         and vice versa.
+        // bins full_to_empty = ('0 => [1:LENGTH-1][*1:$] => LENGTH);
+        // bins empty_to_full = (LENGTH => [1:LENGTH-1][*1:$] => '0);
+
+        /******************* VIVADO BUG ****************************/
+        //I have the above transitions commented out. They compile and
+        //elaborate fine, but during simulation I get the following seemingly
+        //unrelated message:
+        //      ERROR: unexpected exception when evaluating tcl command
+        //        while executing
+        //        "write_xsim_coverage"
+        //I dont know? I know its those two lines, because it goes away when
+        //they get commented out. The tcl file seems unrelated to all this so 
+        //it must maybe be some weird bug? I dont know, for now ill comment it 
+        //out even though id like to cover it.
+        /************************************************************/
+      }
+
+      //we want to cross item_count with all combos of readin and writting
+      rd_x_wr_item_count: cross rd, wr, item_count;
+
       //We want to:
       //  - cover having a full and an empty fifo.
       //
