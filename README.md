@@ -61,4 +61,4 @@ The sim script uses the filelist to compile all the dependencies first.
 
 **Coverage Report:**
 
-![Screenshot from 2023-06-28 17-09-50](https://github.com/woodrowb96/systemverilog-fifo-and-uvm-testbench/assets/39601174/6f710173-d3a0-4907-92f8-172507740d29)
+<img width="872" height="1732" alt="coverage" src="https://github.com/user-attachments/assets/06d27503-4e3f-4d8f-a9b7-e297ac5191d2" />
